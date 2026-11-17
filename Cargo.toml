@@ -1,0 +1,55 @@
+[package]
+name = "crypto-service"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+description = "Crypto Service Key Service E-Office: enkripsi Hybrid PQC naskah dinas Rahasia dan Sangat Rahasia"
+license = "LicenseRef-BSSN-Internal"
+publish = false
+
+[lib]
+name = "crypto_service"
+path = "src/lib.rs"
+
+[[bin]]
+name = "crypto-service"
+path = "src/main.rs"
+
+[dependencies]
+# Semua primitif kripto berasal dari AWS-LC lewat aws-lc-rs (modul AWS-LC punya
+# validasi FIPS 140-3; aktifkan fitur "fips" bila lingkungan build mendukung).
+aws-lc-rs = "1.19"
+
+# TLS 1.3 + hybrid X25519MLKEM768 dengan provider aws-lc-rs (bawaan rustls 0.23).
+rustls = "0.23"
+tokio-rustls = "0.26"
+x509-parser = "0.17"
+
+# Server HTTP
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "time", "fs"] }
+axum = "0.8"
+hyper = { version = "1", features = ["server", "http1", "http2"] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto", "server-graceful", "service", "http1", "http2"] }
+
+# Klien OpenBao: tanpa provider bawaan agar tidak menarik ring; memakai rustls + aws-lc-rs di atas.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-no-provider"] }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+thiserror = "2"
+zeroize = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+rcgen = { version = "0.14", default-features = false, features = ["aws_lc_rs", "pem", "crypto"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+overflow-checks = true
